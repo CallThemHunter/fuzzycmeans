@@ -117,4 +117,5 @@ if __name__ == "__main__":
 
     print(points)
     for _ in range(20):
-        print(clustering)
+        pass
+    print(clustering)
