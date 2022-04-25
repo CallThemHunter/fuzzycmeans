@@ -5,8 +5,7 @@ from numpy.typing import NDArray
 
 
 class FuzzyCluster:
-    def __init__(self, data: NDArray, membership: NDArray, m=2):
-        self._m = m
+    def __init__(self, data: NDArray, membership: NDArray):
         self.data = data
         self.membership = np.concatenate(
             np.ones((1, membership)),
@@ -28,8 +27,11 @@ class FuzzyCluster:
 
 
 class FuzzyClustering:
-    def __init__(self, data: NDArray, k=4):
+    def __init__(self, data: NDArray, k=4, m=2):
         self._k = k
+        self._m = m
+
+        # fix this so you don't need to shuffle
         np.random.shuffle(data)
         self.data = data
 
@@ -64,16 +66,38 @@ class FuzzyClustering:
         an update function
         computes new cluster centroids based on assignment
         """
-        pass
+        centroids = []
+        for cluster in self.clusters:
+            centroids += cluster.centroid()
+        return centroids
 
-    def compute_membership(self):
+    def compute_membership(self, centroids):
         """
         an update function
         computes similar but better membership assignment
         """
+        # membership of all elements in clusters
+        u = []
+        for cluster in self.clusters:
+            # j - cluster
+            u_i = []
+            for point in cluster.data:
+                denom = np.sum(
+                    np.square(np.subtract(point, centroids)),
+                    axis = 0)
+                numer = np.sum(
+                    np.square(point - cluster.centroid()),
+                    axis = 0)
+                inner = np.power(np.divide(numer, denom), 2/(self._m-1))
+                u_i += 1/(np.sum(inner))
+
+            cluster.membership = np.array(u_i)
+            u += u_i
+        return u
 
     def iterate(self):
-        pass
+        centroids = self.compute_centroids()
+        self.compute_membership(centroids)
 
     def reload(self, k=4):
         """
@@ -85,7 +109,7 @@ class FuzzyClustering:
         """
         adds data to clustering system
         """
-        # dump all data in first cluster
+        #  assign all data to first cluster
         self.clusters[0].data = np.concatenate(
             self.clusters[0].data, data)
         self.clusters[0].membership = np.concatenate(
@@ -117,5 +141,4 @@ if __name__ == "__main__":
 
     print(points)
     for _ in range(20):
-        pass
-    print(clustering)
+        print(clustering)
